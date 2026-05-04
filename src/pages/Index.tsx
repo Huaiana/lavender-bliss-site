@@ -1,11 +1,18 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import heroImage from "@/assets/lavender-hero.jpg";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { toast } from "sonner";
-import { Droplet, Sparkles, Leaf, Wind, ShoppingBag, ArrowRight } from "lucide-react";
+import { Droplet, Sparkles, Leaf, Wind, ShoppingBag, ArrowRight, Tag, Truck } from "lucide-react";
+import {
+  aplicarCupom,
+  calcularFrete,
+  criarCliente,
+  criarPedido,
+  estimarDistanciaPorCep,
+} from "@/lib/api/services";
 
 const Index = () => {
   const [section, setSection] = useState<"home" | "product" | "checkout">("home");
