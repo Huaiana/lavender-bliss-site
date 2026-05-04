@@ -172,13 +172,73 @@ const Product = ({ onBuy }: { onBuy: () => void }) => (
   </section>
 );
 
+const PRECO_BASE = 49.9;
+
 const Checkout = () => {
   const [payment, setPayment] = useState("pix");
+  const [nome, setNome] = useState("");
+  const [email, setEmail] = useState("");
   const [address, setAddress] = useState("Rua Ademar de Barros, 576");
+  const [city, setCity] = useState("São Paulo");
+  const [cep, setCep] = useState("");
+  const [cupom, setCupom] = useState("");
+  const [cupomAplicado, setCupomAplicado] = useState<{ codigo: string; valorDesconto: number } | null>(null);
+  const [frete, setFrete] = useState<{ valor: number; distancia: number } | null>(null);
+
+  const subtotal = PRECO_BASE;
+  const total = useMemo(() => {
+    return +(subtotal + (frete?.valor ?? 0) - (cupomAplicado?.valorDesconto ?? 0)).toFixed(2);
+  }, [subtotal, frete, cupomAplicado]);
+
+  const handleCalcularFrete = () => {
+    try {
+      const distancia = estimarDistanciaPorCep(cep);
+      const { valorFrete } = calcularFrete(distancia);
+      setFrete({ valor: valorFrete, distancia });
+      toast.success(`Frete calculado: ~${distancia} km`);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Erro ao calcular frete");
+    }
+  };
+
+  const handleAplicarCupom = () => {
+    try {
+      const r = aplicarCupom(cupom, subtotal);
+      setCupomAplicado({ codigo: r.codigo, valorDesconto: r.valorDesconto });
+      toast.success(`Cupom ${r.codigo} aplicado!`, { description: `−R$ ${r.valorDesconto.toFixed(2)}` });
+    } catch (err) {
+      setCupomAplicado(null);
+      toast.error(err instanceof Error ? err.message : "Cupom inválido");
+    }
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    toast.success("Pedido realizado!", { description: `Pagamento via ${payment.toUpperCase()} confirmado.` });
+    try {
+      if (!nome || !email) {
+        toast.error("Preencha nome e e-mail.");
+        return;
+      }
+      if (!frete) {
+        toast.error("Calcule o frete antes de finalizar.");
+        return;
+      }
+      const cliente = criarCliente({ nome, email, endereco: `${address}, ${city}` });
+      const pedido = criarPedido({
+        cliente_id: cliente.id,
+        produto_id: 1,
+        quantidade: 1,
+        endereco_entrega: `${address}, ${city} — CEP ${cep}`,
+        distancia_calculada: frete.distancia,
+        cupom: cupomAplicado?.codigo,
+        metodo_pagamento: payment,
+      });
+      toast.success("Pedido realizado!", {
+        description: `#${pedido.id} · ${payment.toUpperCase()} · Total R$ ${pedido.total_final.toFixed(2)}`,
+      });
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Erro ao criar pedido");
+    }
   };
 
   return (
@@ -191,6 +251,20 @@ const Checkout = () => {
       <form onSubmit={handleSubmit} className="grid lg:grid-cols-[1fr_400px] gap-8">
         <div className="space-y-8">
           <div className="p-8 rounded-3xl bg-card border border-border/50 shadow-soft space-y-6">
+            <h3 className="font-display text-2xl">Seus dados</h3>
+            <div className="grid sm:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="nome" className="text-xs tracking-wider uppercase text-muted-foreground">Nome</Label>
+                <Input id="nome" value={nome} onChange={(e) => setNome(e.target.value)} placeholder="Seu nome" className="rounded-xl h-12 bg-background" />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="email" className="text-xs tracking-wider uppercase text-muted-foreground">E-mail</Label>
+                <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="voce@email.com" className="rounded-xl h-12 bg-background" />
+              </div>
+            </div>
+          </div>
+
+          <div className="p-8 rounded-3xl bg-card border border-border/50 shadow-soft space-y-6">
             <h3 className="font-display text-2xl">Endereço de entrega</h3>
             <div className="space-y-2">
               <Label htmlFor="addr" className="text-xs tracking-wider uppercase text-muted-foreground">Endereço</Label>
@@ -199,13 +273,33 @@ const Checkout = () => {
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="city" className="text-xs tracking-wider uppercase text-muted-foreground">Cidade</Label>
-                <Input id="city" placeholder="São Paulo" className="rounded-xl h-12 bg-background" />
+                <Input id="city" value={city} onChange={(e) => setCity(e.target.value)} className="rounded-xl h-12 bg-background" />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="cep" className="text-xs tracking-wider uppercase text-muted-foreground">CEP</Label>
-                <Input id="cep" placeholder="00000-000" className="rounded-xl h-12 bg-background" />
+                <Input id="cep" value={cep} onChange={(e) => setCep(e.target.value)} placeholder="00000-000" className="rounded-xl h-12 bg-background" />
               </div>
             </div>
+            <Button type="button" variant="outline" onClick={handleCalcularFrete} className="rounded-full">
+              <Truck className="w-4 h-4 mr-2" /> Calcular frete
+            </Button>
+            {frete && (
+              <p className="text-sm text-muted-foreground">
+                Distância estimada: <span className="text-foreground">{frete.distancia} km</span> · Frete:{" "}
+                <span className="text-foreground">R$ {frete.valor.toFixed(2)}</span>
+              </p>
+            )}
+          </div>
+
+          <div className="p-8 rounded-3xl bg-card border border-border/50 shadow-soft space-y-6">
+            <h3 className="font-display text-2xl">Cupom de desconto</h3>
+            <div className="flex gap-3">
+              <Input value={cupom} onChange={(e) => setCupom(e.target.value)} placeholder="LAVANDA10" className="rounded-xl h-12 bg-background" />
+              <Button type="button" variant="outline" onClick={handleAplicarCupom} className="rounded-full">
+                <Tag className="w-4 h-4 mr-2" /> Aplicar
+              </Button>
+            </div>
+            <p className="text-xs text-muted-foreground">Experimente <code className="text-primary">LAVANDA10</code> ou <code className="text-primary">BEMVINDO5</code></p>
           </div>
 
           <div className="p-8 rounded-3xl bg-card border border-border/50 shadow-soft space-y-6">
@@ -237,16 +331,25 @@ const Checkout = () => {
             <div className="flex-1">
               <div className="font-medium">Óleo Bifásico de Lavanda</div>
               <div className="text-sm text-muted-foreground">60ml · 1 unidade</div>
-              <div className="font-display text-lg text-primary mt-1">R$ 49,90</div>
+              <div className="font-display text-lg text-primary mt-1">R$ {PRECO_BASE.toFixed(2)}</div>
             </div>
           </div>
           <div className="space-y-2 text-sm">
-            <div className="flex justify-between"><span className="text-muted-foreground">Subtotal</span><span>R$ 49,90</span></div>
-            <div className="flex justify-between"><span className="text-muted-foreground">Frete</span><span className="italic text-xs">calculado pelo endereço</span></div>
+            <div className="flex justify-between"><span className="text-muted-foreground">Subtotal</span><span>R$ {subtotal.toFixed(2)}</span></div>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Frete</span>
+              <span>{frete ? `R$ ${frete.valor.toFixed(2)}` : <span className="italic text-xs">informe o CEP</span>}</span>
+            </div>
+            {cupomAplicado && (
+              <div className="flex justify-between text-primary">
+                <span>Cupom {cupomAplicado.codigo}</span>
+                <span>−R$ {cupomAplicado.valorDesconto.toFixed(2)}</span>
+              </div>
+            )}
           </div>
           <div className="flex justify-between items-baseline pt-4 border-t border-border/60">
             <span className="font-display text-xl">Total</span>
-            <span className="font-display text-3xl text-primary">R$ 49,90</span>
+            <span className="font-display text-3xl text-primary">R$ {total.toFixed(2)}</span>
           </div>
           <Button type="submit" size="lg" className="w-full bg-primary hover:bg-primary-deep rounded-full h-14 text-base shadow-elegant">
             Comprar agora
