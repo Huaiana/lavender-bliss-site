@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { toast } from "sonner";
-import { Droplet, Sparkles, Leaf, Wind, ShoppingBag, ArrowRight, Tag, Truck } from "lucide-react";
+import { Droplet, Sparkles, Leaf, Wind, ShoppingBag, ArrowRight, Tag, Truck, LifeBuoy } from "lucide-react";
 import {
   aplicarCupom,
   calcularFrete,
@@ -13,6 +13,7 @@ import {
   criarPedido,
   estimarDistanciaPorCep,
 } from "@/lib/api/services";
+import Support from "@/components/Support";
 
 const Index = () => {
   const [section, setSection] = useState<"home" | "product" | "checkout">("home");
