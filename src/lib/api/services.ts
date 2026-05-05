@@ -1,6 +1,6 @@
 // Serviços/controllers portados do backend Express para funções puras no frontend
-import type { Cliente, Pedido } from "./models";
-import { clienteRepo, descontoRepo, pedidoRepo, produtoRepo } from "./repositories";
+import type { Cliente, Pedido, Suporte } from "./models";
+import { clienteRepo, descontoRepo, pedidoRepo, produtoRepo, suporteRepo } from "./repositories";
 
 // ---------- Cliente ----------
 export function criarCliente(input: { nome: string; email: string; endereco?: string; telefone?: string; cpf?: string }): Cliente {
