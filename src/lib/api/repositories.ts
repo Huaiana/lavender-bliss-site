@@ -1,5 +1,5 @@
 // Repositórios em memória (portados do backend)
-import type { Cliente, Desconto, Frete, Pedido, Produto } from "./models";
+import type { Cliente, Desconto, Frete, Pedido, Produto, Suporte } from "./models";
 
 class Repository<T> {
   protected items: T[] = [];
@@ -11,6 +11,18 @@ export class ClienteRepository extends Repository<Cliente> {}
 export class DescontoRepository extends Repository<Desconto> {}
 export class FreteRepository extends Repository<Frete> {}
 export class PedidoRepository extends Repository<Pedido> {}
+
+export class SuporteRepository {
+  private suportes: Suporte[] = [];
+  save(s: Suporte) { this.suportes.push(s); }
+  findAll() { return [...this.suportes]; }
+  findById(id: number) { return this.suportes.find(s => s.id === id); }
+  updateStatus(id: number, status: "Aberto" | "Fechado") {
+    const s = this.findById(id);
+    if (s) { s.status = status; return true; }
+    return false;
+  }
+}
 
 export class ProdutoRepository {
   private produtos: Produto[] = [];
@@ -30,6 +42,7 @@ export const descontoRepo = new DescontoRepository();
 export const freteRepo = new FreteRepository();
 export const pedidoRepo = new PedidoRepository();
 export const produtoRepo = new ProdutoRepository();
+export const suporteRepo = new SuporteRepository();
 
 // Seed: produto principal e cupons
 produtoRepo.save({
