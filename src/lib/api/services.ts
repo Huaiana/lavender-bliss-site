@@ -1,6 +1,6 @@
 // Serviços/controllers portados do backend Express para funções puras no frontend
-import type { Cliente, Pedido } from "./models";
-import { clienteRepo, descontoRepo, pedidoRepo, produtoRepo } from "./repositories";
+import type { Cliente, Pedido, Suporte } from "./models";
+import { clienteRepo, descontoRepo, pedidoRepo, produtoRepo, suporteRepo } from "./repositories";
 
 // ---------- Cliente ----------
 export function criarCliente(input: { nome: string; email: string; endereco?: string; telefone?: string; cpf?: string }): Cliente {
@@ -121,3 +121,35 @@ export function criarPedido(input: NovoPedidoInput): Pedido {
 }
 
 export function obterPedidos() { return pedidoRepo.findAll(); }
+
+// ---------- Suporte ----------
+export interface NovoSuporteInput {
+  cliente_id: number;
+  assunto: string;
+  mensagem: string;
+}
+
+export function criarSuporte(input: NovoSuporteInput): Suporte {
+  if (typeof input.cliente_id !== "number" || typeof input.assunto !== "string" || typeof input.mensagem !== "string") {
+    throw new Error("Cliente ID deve ser um número, assunto e mensagem devem ser strings.");
+  }
+  if (!input.assunto.trim() || !input.mensagem.trim()) {
+    throw new Error("Assunto e mensagem são obrigatórios.");
+  }
+  const novo: Suporte = {
+    id: Date.now(),
+    cliente_id: input.cliente_id,
+    assunto: input.assunto.trim(),
+    mensagem: input.mensagem.trim(),
+    data_criacao: new Date().toISOString(),
+    status: "Aberto",
+  };
+  suporteRepo.save(novo);
+  return novo;
+}
+
+export function listarSuportes(): Suporte[] { return suporteRepo.findAll(); }
+
+export function atualizarStatusSuporte(id: number, status: "Aberto" | "Fechado"): boolean {
+  return suporteRepo.updateStatus(id, status);
+}

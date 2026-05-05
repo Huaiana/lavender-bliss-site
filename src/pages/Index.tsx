@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { toast } from "sonner";
-import { Droplet, Sparkles, Leaf, Wind, ShoppingBag, ArrowRight, Tag, Truck } from "lucide-react";
+import { Droplet, Sparkles, Leaf, Wind, ShoppingBag, ArrowRight, Tag, Truck, LifeBuoy } from "lucide-react";
 import {
   aplicarCupom,
   calcularFrete,
@@ -13,6 +13,7 @@ import {
   criarPedido,
   estimarDistanciaPorCep,
 } from "@/lib/api/services";
+import Support from "@/components/Support";
 
 const Index = () => {
   const [section, setSection] = useState<"home" | "product" | "checkout">("home");
@@ -37,6 +38,7 @@ const Index = () => {
             <button onClick={() => go("home")} className={`transition-smooth hover:text-primary ${section === "home" ? "text-primary" : ""}`}>Início</button>
             <button onClick={() => go("product")} className={`transition-smooth hover:text-primary ${section === "product" ? "text-primary" : ""}`}>Produto</button>
             <button onClick={() => go("checkout")} className={`transition-smooth hover:text-primary ${section === "checkout" ? "text-primary" : ""}`}>Comprar</button>
+            <a href="#suporte" className="transition-smooth hover:text-primary inline-flex items-center gap-1"><LifeBuoy className="w-3.5 h-3.5" /> Suporte</a>
           </div>
           <Button onClick={() => go("checkout")} variant="default" size="sm" className="bg-primary hover:bg-primary-deep rounded-full">
             <ShoppingBag className="w-4 h-4 mr-2" /> R$ 49,90
@@ -50,7 +52,10 @@ const Index = () => {
         {section === "checkout" && <Checkout />}
       </main>
 
-      <footer className="border-t border-border/50 mt-32 py-12 bg-gradient-soft">
+      <Support />
+
+      <footer className="border-t border-border/50 py-12 bg-gradient-soft">
+
         <div className="container text-center text-sm text-muted-foreground font-light">
           <div className="font-display text-2xl text-foreground mb-2">Lavanda<span className="italic text-primary">.</span></div>
           <p>© 2026 — Hidratação que perfuma seus dias.</p>
