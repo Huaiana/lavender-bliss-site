@@ -52,7 +52,10 @@ const Index = () => {
         {section === "checkout" && <Checkout />}
       </main>
 
-      <footer className="border-t border-border/50 mt-32 py-12 bg-gradient-soft">
+      <Support />
+
+      <footer className="border-t border-border/50 py-12 bg-gradient-soft">
+
         <div className="container text-center text-sm text-muted-foreground font-light">
           <div className="font-display text-2xl text-foreground mb-2">Lavanda<span className="italic text-primary">.</span></div>
           <p>© 2026 — Hidratação que perfuma seus dias.</p>
