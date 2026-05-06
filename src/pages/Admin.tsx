@@ -270,7 +270,8 @@ const StatCard = ({ label, value, highlight }: { label: string; value: string; h
   </div>
 );
 
-const DbSection = ({ title, rows }: { title: string; rows: Record<string, unknown>[] }) => {
+const DbSection = ({ title, rows }: { title: string; rows: readonly object[] }) => {
+  const data = rows as unknown as Record<string, unknown>[];
   const cols = rows.length > 0 ? Object.keys(rows[0]) : [];
   return (
     <div className="p-6 rounded-2xl bg-card border border-border/50">
