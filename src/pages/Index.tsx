@@ -134,7 +134,7 @@ const Product = ({ onBuy }: { onBuy: () => void }) => (
 
       <div className="space-y-8 animate-fade-up">
         <div>
-          <div className="text-xs tracking-widest uppercase text-primary mb-3">Skincare · 60ml</div>
+          <div className="text-xs tracking-widest uppercase text-primary mb-3">Skincare · 120ml</div>
           <h2 className="font-display text-5xl md:text-6xl leading-[0.95] mb-4">
             Óleo Bifásico
             <br /><span className="italic">de Lavanda</span>
@@ -335,7 +335,7 @@ const Checkout = () => {
             </div>
             <div className="flex-1">
               <div className="font-medium">Óleo Bifásico de Lavanda</div>
-              <div className="text-sm text-muted-foreground">60ml · 1 unidade</div>
+              <div className="text-sm text-muted-foreground">120ml · 1 unidade</div>
               <div className="font-display text-lg text-primary mt-1">R$ {PRECO_BASE.toFixed(2)}</div>
             </div>
           </div>
