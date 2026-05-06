@@ -216,6 +216,40 @@ const AdminPanel = ({ onLogout }: { onLogout: () => void }) => {
               </div>
             </div>
 
+            <div className="p-6 rounded-2xl bg-card border border-border/50">
+              <h3 className="font-display text-xl mb-4">Vendas por cliente</h3>
+              {Object.keys(stats.porCliente).length === 0 ? (
+                <p className="text-sm text-muted-foreground">Sem vendas ainda.</p>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>ID</TableHead>
+                      <TableHead>Cliente</TableHead>
+                      <TableHead>Email</TableHead>
+                      <TableHead className="text-right">Pedidos</TableHead>
+                      <TableHead className="text-right">Unid.</TableHead>
+                      <TableHead className="text-right">Receita</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {Object.entries(stats.porCliente)
+                      .sort((a, b) => b[1].receita - a[1].receita)
+                      .map(([id, v]) => (
+                        <TableRow key={id}>
+                          <TableCell className="font-mono text-xs">{id}</TableCell>
+                          <TableCell>{v.nome}</TableCell>
+                          <TableCell className="text-xs text-muted-foreground">{v.email}</TableCell>
+                          <TableCell className="text-right">{v.pedidos}</TableCell>
+                          <TableCell className="text-right">{v.unidades}</TableCell>
+                          <TableCell className="text-right font-medium">{fmt(v.receita)}</TableCell>
+                        </TableRow>
+                      ))}
+                  </TableBody>
+                </Table>
+              )}
+            </div>
+
             <Button variant="outline" onClick={refresh} className="rounded-full">Atualizar dados</Button>
           </TabsContent>
 
