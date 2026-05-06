@@ -45,7 +45,8 @@ export function aplicarCupom(codigo: string, valorOriginal: number): DescontoRes
 }
 
 // ---------- Frete ----------
-export function calcularFrete(distancia: number, valorPorKm = 2.5): { valorFrete: number; distancia: number } {
+// Atualizado conforme backend: R$ 0,20 por km
+export function calcularFrete(distancia: number, valorPorKm = 0.2): { valorFrete: number; distancia: number } {
   if (typeof distancia !== "number" || distancia <= 0) {
     throw new Error("Distância deve ser um número positivo.");
   }
