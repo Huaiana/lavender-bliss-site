@@ -3,7 +3,13 @@ import type { Cliente, Pedido, Suporte } from "./models";
 import { clienteRepo, descontoRepo, pedidoRepo, produtoRepo, suporteRepo } from "./repositories";
 
 // ---------- Cliente ----------
-export function criarCliente(input: { nome: string; email: string; endereco?: string; telefone?: string; cpf?: string }): Cliente {
+export function criarCliente(input: {
+  nome: string;
+  email: string;
+  endereco?: string;
+  telefone?: string;
+  cpf?: string;
+}): Cliente {
   if (typeof input.nome !== "string" || typeof input.email !== "string") {
     throw new Error("Nome e email devem ser strings.");
   }
@@ -29,7 +35,9 @@ export function calcularDesconto(valorOriginal: number, percentualDesconto: numb
 }
 
 export function aplicarCupom(codigo: string, valorOriginal: number): DescontoResultado & { codigo: string } {
-  const cupom = descontoRepo.findAll().find(c => c.codigo_cupom.toUpperCase() === codigo.trim().toUpperCase() && c.ativo === 1);
+  const cupom = descontoRepo
+    .findAll()
+    .find((c) => c.codigo_cupom.toUpperCase() === codigo.trim().toUpperCase() && c.ativo === 1);
   if (!cupom) throw new Error("Cupom inválido ou expirado.");
   if (cupom.tipo === "percentual") {
     return { codigo: cupom.codigo_cupom, ...calcularDesconto(valorOriginal, cupom.porcentagem_desconto) };
@@ -58,15 +66,19 @@ export function estimarDistanciaPorCep(cep: string): number {
   const digits = cep.replace(/\D/g, "");
   if (digits.length < 5) throw new Error("CEP inválido.");
   const prefixo = parseInt(digits.slice(0, 5), 10);
-  // Origem: Avenida Ademar de Barros, 576 - Guarujá/SP (CEP 11420-040)
+  // Origem: Avenida Ademar de Barros, 576 - Guarujá/SP (CEP 11430-005)
   const origem = 11420;
   const diff = Math.abs(prefixo - origem);
   return Math.max(2, Math.min(1500, Math.round(diff / 50)));
 }
 
 // ---------- Produto ----------
-export function listarProdutos() { return produtoRepo.findAll(); }
-export function buscarProdutoPorId(id: number) { return produtoRepo.findById(id); }
+export function listarProdutos() {
+  return produtoRepo.findAll();
+}
+export function buscarProdutoPorId(id: number) {
+  return produtoRepo.findById(id);
+}
 
 // ---------- Pedido ----------
 export interface NovoPedidoInput {
@@ -93,7 +105,7 @@ export function criarPedido(input: NovoPedidoInput): Pedido {
   if (input.cupom) {
     const r = aplicarCupom(input.cupom, valor_total);
     valor_desconto = r.valorDesconto;
-    desconto_id = descontoRepo.findAll().find(c => c.codigo_cupom === r.codigo)?.id ?? 0;
+    desconto_id = descontoRepo.findAll().find((c) => c.codigo_cupom === r.codigo)?.id ?? 0;
   }
 
   const total_final = +(valor_total + valorFrete - valor_desconto).toFixed(2);
@@ -122,7 +134,9 @@ export function criarPedido(input: NovoPedidoInput): Pedido {
   return pedido;
 }
 
-export function obterPedidos() { return pedidoRepo.findAll(); }
+export function obterPedidos() {
+  return pedidoRepo.findAll();
+}
 
 // ---------- Suporte ----------
 export interface NovoSuporteInput {
@@ -150,7 +164,9 @@ export function criarSuporte(input: NovoSuporteInput): Suporte {
   return novo;
 }
 
-export function listarSuportes(): Suporte[] { return suporteRepo.findAll(); }
+export function listarSuportes(): Suporte[] {
+  return suporteRepo.findAll();
+}
 
 export function atualizarStatusSuporte(id: number, status: "Aberto" | "Fechado"): boolean {
   return suporteRepo.updateStatus(id, status);
