@@ -1,31 +1,34 @@
-// Modelos portados do backend (api_projeto-integrador-gp12)
+// Modelos portados do backend (api_projeto-integrador-gp12 — src/SQLite.sql)
 export interface Cliente {
   id: number;
   nome: string;
   email: string;
   senha?: string;
   data_nascimento?: string;
-  endereco?: string;
+  endereco: string;
   telefone?: string;
-  cpf?: string;
 }
+
+export type DescontoTipo = "PORCENTAGEM" | "FIXO";
 
 export interface Desconto {
   id: number;
   codigo_cupom: string;
-  tipo: "percentual" | "fixo";
-  porcentagem_desconto: number;
-  valor_fixo_desconto: number;
-  data_validade: string;
+  tipo: DescontoTipo;
+  porcentagem_desconto: number | null;
+  valor_fixo_desconto: number | null;
+  data_validade: string | null;
   ativo: number;
 }
+
+export type FreteStatus = "ATIVO" | "INATIVO";
 
 export interface Frete {
   id: number;
   endereco_origem: string;
-  endereco_destino: string;
   valor_por_km: number;
   distancia_maxima: number;
+  status: FreteStatus;
 }
 
 export interface Produto {
@@ -40,16 +43,17 @@ export interface Produto {
   estoque: number;
 }
 
+export type StatusCompra = "PENDENTE" | "CONCLUIDO" | "CANCELADO";
+
 export interface Pedido {
   id: number;
   cliente_id: number;
   produto_id: number;
+  // mantidos no front para UX/relatórios (não existem no SQL puro do back)
   quantidade: number;
   valor_unitario: number;
   valor_total: number;
-  status: string;
-  data_criacao: string;
-  data_atualizacao: string;
+  // colunas espelhando o SQL
   desconto_id: number;
   data_venda: string;
   endereco_entrega: string;
@@ -58,6 +62,11 @@ export interface Pedido {
   valor_desconto: number;
   total_final: number;
   metodo_pagamento: string;
+  status_compra: StatusCompra;
+  // alias de compatibilidade
+  data_criacao: string;
+  data_atualizacao: string;
+  status: StatusCompra;
 }
 
 export interface Suporte {
@@ -65,6 +74,19 @@ export interface Suporte {
   cliente_id: number;
   assunto: string;
   mensagem: string;
-  data_criacao: string;
+  data_contato: string;
+  // mantidos para uso no front (não existem no SQL)
   status: "Aberto" | "Fechado";
+  data_criacao: string;
+}
+
+export type StatusEntrega = "EM ROTA" | "ENTREGUE" | "ATRASADO";
+
+export interface AcompanhamentoEntrega {
+  id: number;
+  pedido_id: number;
+  status_entrega: StatusEntrega;
+  previsao_entrega: string;
+  cliente_id: number;
+  frete_id: number;
 }
