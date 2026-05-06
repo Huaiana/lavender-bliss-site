@@ -248,6 +248,15 @@ const AdminPanel = ({ onLogout }: { onLogout: () => void }) => {
               )}
             </div>
           </TabsContent>
+
+          <TabsContent value="db" className="space-y-8">
+            <DbSection title="cliente" rows={clienteRepo.findAll()} />
+            <DbSection title="produto" rows={produtoRepo.findAll()} />
+            <DbSection title="desconto" rows={descontoRepo.findAll()} />
+            <DbSection title="frete" rows={freteRepo.findAll()} />
+            <DbSection title="pedido" rows={obterPedidos()} />
+            <DbSection title="suporte" rows={listarSuportes()} />
+          </TabsContent>
         </Tabs>
       </main>
     </div>
