@@ -272,18 +272,18 @@ const StatCard = ({ label, value, highlight }: { label: string; value: string; h
 
 const DbSection = ({ title, rows }: { title: string; rows: readonly object[] }) => {
   const data = rows as unknown as Record<string, unknown>[];
-  const cols = rows.length > 0 ? Object.keys(rows[0]) : [];
+  const cols = data.length > 0 ? Object.keys(data[0]) : [];
   return (
     <div className="p-6 rounded-2xl bg-card border border-border/50">
       <div className="flex items-baseline justify-between mb-4">
         <h3 className="font-display text-xl">
           <span className="text-primary">{title}</span>
           <span className="text-muted-foreground font-light text-sm ml-3">
-            {rows.length} {rows.length === 1 ? "registro" : "registros"}
+            {data.length} {data.length === 1 ? "registro" : "registros"}
           </span>
         </h3>
       </div>
-      {rows.length === 0 ? (
+      {data.length === 0 ? (
         <p className="text-sm text-muted-foreground">Tabela vazia.</p>
       ) : (
         <div className="overflow-x-auto">
@@ -294,7 +294,7 @@ const DbSection = ({ title, rows }: { title: string; rows: readonly object[] }) 
               </TableRow>
             </TableHeader>
             <TableBody>
-              {rows.map((r, i) => (
+              {data.map((r, i) => (
                 <TableRow key={i}>
                   {cols.map((c) => {
                     const v = r[c];
