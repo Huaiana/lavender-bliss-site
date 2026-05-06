@@ -39,7 +39,6 @@ const Index = () => {
             <button onClick={() => go("product")} className={`transition-smooth hover:text-primary ${section === "product" ? "text-primary" : ""}`}>Produto</button>
             <button onClick={() => go("checkout")} className={`transition-smooth hover:text-primary ${section === "checkout" ? "text-primary" : ""}`}>Comprar</button>
             <a href="#suporte" className="transition-smooth hover:text-primary inline-flex items-center gap-1"><LifeBuoy className="w-3.5 h-3.5" /> Suporte</a>
-            <a href="/admin" className="transition-smooth hover:text-primary">Admin</a>
           </div>
           <Button onClick={() => go("checkout")} variant="default" size="sm" className="bg-primary hover:bg-primary-deep rounded-full">
             <ShoppingBag className="w-4 h-4 mr-2" /> R$ 49,90
