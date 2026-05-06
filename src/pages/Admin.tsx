@@ -282,7 +282,10 @@ const AdminPanel = ({ onLogout }: { onLogout: () => void }) => {
                       <TableRow key={p.id}>
                         <TableCell className="font-mono text-xs">{p.id}</TableCell>
                         <TableCell className="text-xs">{new Date(p.data_criacao).toLocaleString("pt-BR")}</TableCell>
-                        <TableCell className="text-xs">{p.cliente_id}</TableCell>
+                        <TableCell className="text-xs">
+                          <div className="font-medium text-foreground">{clienteNome(p.cliente_id)}</div>
+                          <div className="text-muted-foreground">#{p.cliente_id} · {cliente(p.cliente_id)?.email ?? "—"}</div>
+                        </TableCell>
                         <TableCell>{produtoNome(p.produto_id)}</TableCell>
                         <TableCell className="text-right">{p.quantidade}</TableCell>
                         <TableCell className="text-right">{fmt(p.valor_frete)}</TableCell>
