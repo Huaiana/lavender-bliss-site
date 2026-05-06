@@ -134,6 +134,7 @@ const AdminPanel = ({ onLogout }: { onLogout: () => void }) => {
           <TabsList>
             <TabsTrigger value="relatorios"><BarChart3 className="w-4 h-4 mr-2" /> Relatórios de vendas</TabsTrigger>
             <TabsTrigger value="pedidos" onClick={refresh}><Package className="w-4 h-4 mr-2" /> Pedidos</TabsTrigger>
+            <TabsTrigger value="db"><Database className="w-4 h-4 mr-2" /> Banco de dados</TabsTrigger>
           </TabsList>
 
           <TabsContent value="relatorios" className="space-y-6">
