@@ -81,6 +81,8 @@ const AdminPanel = ({ onLogout }: { onLogout: () => void }) => {
   const refresh = () => setPedidos(obterPedidos());
 
   const produtoNome = (id: number) => produtoRepo.findById(id)?.nome ?? `#${id}`;
+  const cliente = (id: number) => clienteRepo.findAll().find((c) => c.id === id);
+  const clienteNome = (id: number) => cliente(id)?.nome ?? `Cliente #${id}`;
 
   const stats = useMemo(() => {
     const total = pedidos.length;
@@ -106,7 +108,20 @@ const AdminPanel = ({ onLogout }: { onLogout: () => void }) => {
       return acc;
     }, {});
 
-    return { total, receita, unidades, ticket, totalDescontos, totalFrete, porPagamento, porProduto };
+    const porCliente = pedidos.reduce<Record<number, { nome: string; email: string; pedidos: number; unidades: number; receita: number }>>((acc, p) => {
+      const c = cliente(p.cliente_id);
+      acc[p.cliente_id] ??= {
+        nome: c?.nome ?? `Cliente #${p.cliente_id}`,
+        email: c?.email ?? "—",
+        pedidos: 0, unidades: 0, receita: 0,
+      };
+      acc[p.cliente_id].pedidos++;
+      acc[p.cliente_id].unidades += p.quantidade;
+      acc[p.cliente_id].receita += p.total_final;
+      return acc;
+    }, {});
+
+    return { total, receita, unidades, ticket, totalDescontos, totalFrete, porPagamento, porProduto, porCliente };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pedidos]);
 
@@ -201,6 +216,40 @@ const AdminPanel = ({ onLogout }: { onLogout: () => void }) => {
               </div>
             </div>
 
+            <div className="p-6 rounded-2xl bg-card border border-border/50">
+              <h3 className="font-display text-xl mb-4">Vendas por cliente</h3>
+              {Object.keys(stats.porCliente).length === 0 ? (
+                <p className="text-sm text-muted-foreground">Sem vendas ainda.</p>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>ID</TableHead>
+                      <TableHead>Cliente</TableHead>
+                      <TableHead>Email</TableHead>
+                      <TableHead className="text-right">Pedidos</TableHead>
+                      <TableHead className="text-right">Unid.</TableHead>
+                      <TableHead className="text-right">Receita</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {Object.entries(stats.porCliente)
+                      .sort((a, b) => b[1].receita - a[1].receita)
+                      .map(([id, v]) => (
+                        <TableRow key={id}>
+                          <TableCell className="font-mono text-xs">{id}</TableCell>
+                          <TableCell>{v.nome}</TableCell>
+                          <TableCell className="text-xs text-muted-foreground">{v.email}</TableCell>
+                          <TableCell className="text-right">{v.pedidos}</TableCell>
+                          <TableCell className="text-right">{v.unidades}</TableCell>
+                          <TableCell className="text-right font-medium">{fmt(v.receita)}</TableCell>
+                        </TableRow>
+                      ))}
+                  </TableBody>
+                </Table>
+              )}
+            </div>
+
             <Button variant="outline" onClick={refresh} className="rounded-full">Atualizar dados</Button>
           </TabsContent>
 
@@ -233,7 +282,10 @@ const AdminPanel = ({ onLogout }: { onLogout: () => void }) => {
                       <TableRow key={p.id}>
                         <TableCell className="font-mono text-xs">{p.id}</TableCell>
                         <TableCell className="text-xs">{new Date(p.data_criacao).toLocaleString("pt-BR")}</TableCell>
-                        <TableCell className="text-xs">{p.cliente_id}</TableCell>
+                        <TableCell className="text-xs">
+                          <div className="font-medium text-foreground">{clienteNome(p.cliente_id)}</div>
+                          <div className="text-muted-foreground">#{p.cliente_id} · {cliente(p.cliente_id)?.email ?? "—"}</div>
+                        </TableCell>
                         <TableCell>{produtoNome(p.produto_id)}</TableCell>
                         <TableCell className="text-right">{p.quantidade}</TableCell>
                         <TableCell className="text-right">{fmt(p.valor_frete)}</TableCell>
