@@ -58,7 +58,8 @@ export function estimarDistanciaPorCep(cep: string): number {
   const digits = cep.replace(/\D/g, "");
   if (digits.length < 5) throw new Error("CEP inválido.");
   const prefixo = parseInt(digits.slice(0, 5), 10);
-  const origem = 1310; // origem fictícia em SP
+  // Origem: Avenida Ademar de Barros, 576 - Guarujá/SP (CEP 11420-040)
+  const origem = 11420;
   const diff = Math.abs(prefixo - origem);
   return Math.max(2, Math.min(1500, Math.round(diff / 50)));
 }
