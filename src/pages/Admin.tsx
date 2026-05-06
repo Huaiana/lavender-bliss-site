@@ -81,6 +81,8 @@ const AdminPanel = ({ onLogout }: { onLogout: () => void }) => {
   const refresh = () => setPedidos(obterPedidos());
 
   const produtoNome = (id: number) => produtoRepo.findById(id)?.nome ?? `#${id}`;
+  const cliente = (id: number) => clienteRepo.findAll().find((c) => c.id === id);
+  const clienteNome = (id: number) => cliente(id)?.nome ?? `Cliente #${id}`;
 
   const stats = useMemo(() => {
     const total = pedidos.length;
@@ -106,7 +108,20 @@ const AdminPanel = ({ onLogout }: { onLogout: () => void }) => {
       return acc;
     }, {});
 
-    return { total, receita, unidades, ticket, totalDescontos, totalFrete, porPagamento, porProduto };
+    const porCliente = pedidos.reduce<Record<number, { nome: string; email: string; pedidos: number; unidades: number; receita: number }>>((acc, p) => {
+      const c = cliente(p.cliente_id);
+      acc[p.cliente_id] ??= {
+        nome: c?.nome ?? `Cliente #${p.cliente_id}`,
+        email: c?.email ?? "—",
+        pedidos: 0, unidades: 0, receita: 0,
+      };
+      acc[p.cliente_id].pedidos++;
+      acc[p.cliente_id].unidades += p.quantidade;
+      acc[p.cliente_id].receita += p.total_final;
+      return acc;
+    }, {});
+
+    return { total, receita, unidades, ticket, totalDescontos, totalFrete, porPagamento, porProduto, porCliente };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pedidos]);
 
