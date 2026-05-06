@@ -10,7 +10,29 @@ class Repository<T> {
 export class ClienteRepository extends Repository<Cliente> {}
 export class DescontoRepository extends Repository<Desconto> {}
 export class FreteRepository extends Repository<Frete> {}
-export class PedidoRepository extends Repository<Pedido> {}
+const PEDIDOS_KEY = "lavanda.pedidos";
+
+export class PedidoRepository {
+  private items: Pedido[] = [];
+  constructor() {
+    try {
+      const raw = typeof localStorage !== "undefined" ? localStorage.getItem(PEDIDOS_KEY) : null;
+      if (raw) this.items = JSON.parse(raw);
+    } catch { /* ignore */ }
+  }
+  private persist() {
+    try {
+      if (typeof localStorage !== "undefined")
+        localStorage.setItem(PEDIDOS_KEY, JSON.stringify(this.items));
+    } catch { /* ignore */ }
+  }
+  save(p: Pedido) {
+    // evita duplicar o seed em reloads
+    if (!this.items.some(x => x.id === p.id)) this.items.push(p);
+    this.persist();
+  }
+  findAll(): Pedido[] { return [...this.items]; }
+}
 
 export class SuporteRepository {
   private suportes: Suporte[] = [];
