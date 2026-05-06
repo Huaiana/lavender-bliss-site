@@ -5,11 +5,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { obterPedidos } from "@/lib/api/services";
-import { produtoRepo } from "@/lib/api/repositories";
+import { obterPedidos, listarSuportes } from "@/lib/api/services";
+import { produtoRepo, clienteRepo, descontoRepo, freteRepo } from "@/lib/api/repositories";
 import type { Pedido } from "@/lib/api/models";
 import { toast } from "sonner";
-import { Lock, LogOut, BarChart3, Package, ArrowLeft } from "lucide-react";
+import { Lock, LogOut, BarChart3, Package, ArrowLeft, Database } from "lucide-react";
 
 const ADMIN_PASSWORD = "adminlavanda";
 const SESSION_KEY = "lavanda_admin_session";
@@ -134,6 +134,7 @@ const AdminPanel = ({ onLogout }: { onLogout: () => void }) => {
           <TabsList>
             <TabsTrigger value="relatorios"><BarChart3 className="w-4 h-4 mr-2" /> Relatórios de vendas</TabsTrigger>
             <TabsTrigger value="pedidos" onClick={refresh}><Package className="w-4 h-4 mr-2" /> Pedidos</TabsTrigger>
+            <TabsTrigger value="db"><Database className="w-4 h-4 mr-2" /> Banco de dados</TabsTrigger>
           </TabsList>
 
           <TabsContent value="relatorios" className="space-y-6">
@@ -247,6 +248,15 @@ const AdminPanel = ({ onLogout }: { onLogout: () => void }) => {
               )}
             </div>
           </TabsContent>
+
+          <TabsContent value="db" className="space-y-8">
+            <DbSection title="cliente" rows={clienteRepo.findAll()} />
+            <DbSection title="produto" rows={produtoRepo.findAll()} />
+            <DbSection title="desconto" rows={descontoRepo.findAll()} />
+            <DbSection title="frete" rows={freteRepo.findAll()} />
+            <DbSection title="pedido" rows={obterPedidos()} />
+            <DbSection title="suporte" rows={listarSuportes()} />
+          </TabsContent>
         </Tabs>
       </main>
     </div>
@@ -259,5 +269,52 @@ const StatCard = ({ label, value, highlight }: { label: string; value: string; h
     <div className="font-display text-3xl mt-2">{value}</div>
   </div>
 );
+
+const DbSection = ({ title, rows }: { title: string; rows: readonly object[] }) => {
+  const data = rows as unknown as Record<string, unknown>[];
+  const cols = data.length > 0 ? Object.keys(data[0]) : [];
+  return (
+    <div className="p-6 rounded-2xl bg-card border border-border/50">
+      <div className="flex items-baseline justify-between mb-4">
+        <h3 className="font-display text-xl">
+          <span className="text-primary">{title}</span>
+          <span className="text-muted-foreground font-light text-sm ml-3">
+            {data.length} {data.length === 1 ? "registro" : "registros"}
+          </span>
+        </h3>
+      </div>
+      {data.length === 0 ? (
+        <p className="text-sm text-muted-foreground">Tabela vazia.</p>
+      ) : (
+        <div className="overflow-x-auto">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                {cols.map((c) => <TableHead key={c} className="whitespace-nowrap">{c}</TableHead>)}
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {data.map((r, i) => (
+                <TableRow key={i}>
+                  {cols.map((c) => {
+                    const v = r[c];
+                    const display = v === null || v === undefined
+                      ? "—"
+                      : typeof v === "object" ? JSON.stringify(v) : String(v);
+                    return (
+                      <TableCell key={c} className="text-xs whitespace-nowrap max-w-xs truncate" title={display}>
+                        {display}
+                      </TableCell>
+                    );
+                  })}
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      )}
+    </div>
+  );
+};
 
 export default Admin;
