@@ -48,7 +48,7 @@ const Support = () => {
             </p>
             <div className="space-y-2 text-sm text-muted-foreground">
               <p>📧 contato@lavanda.com</p>
-              <p>⏱️ Atendimento em até 24h</p>
+              <p>⏱️ Suporte 24h — atendimento em até 24h</p>
             </div>
           </div>
 
