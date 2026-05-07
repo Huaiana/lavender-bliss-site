@@ -8,12 +8,17 @@ export function criarCliente(input: {
   email: string;
   endereco?: string;
   telefone?: string;
-  cpf?: string;
 }): Cliente {
   if (typeof input.nome !== "string" || typeof input.email !== "string") {
     throw new Error("Nome e email devem ser strings.");
   }
-  const novo: Cliente = { id: Date.now(), ...input };
+  const novo: Cliente = {
+    id: Date.now(),
+    nome: input.nome,
+    email: input.email,
+    endereco: input.endereco ?? "",
+    telefone: input.telefone,
+  };
   clienteRepo.save(novo);
   return novo;
 }
