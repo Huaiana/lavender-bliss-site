@@ -14,9 +14,11 @@ import {
   estimarDistanciaPorCep,
 } from "@/lib/api/services";
 import Support from "@/components/Support";
+import Auth from "@/components/Auth";
+import Tracking from "@/components/Tracking";
 
 const Index = () => {
-  const [section, setSection] = useState<"home" | "product" | "checkout">("home");
+  const [section, setSection] = useState<"home" | "product" | "checkout" | "conta" | "rastrear">("home");
 
   const go = (s: typeof section) => {
     setSection(s);
@@ -38,6 +40,8 @@ const Index = () => {
             <button onClick={() => go("home")} className={`transition-smooth hover:text-primary ${section === "home" ? "text-primary" : ""}`}>Início</button>
             <button onClick={() => go("product")} className={`transition-smooth hover:text-primary ${section === "product" ? "text-primary" : ""}`}>Produto</button>
             <button onClick={() => go("checkout")} className={`transition-smooth hover:text-primary ${section === "checkout" ? "text-primary" : ""}`}>Comprar</button>
+            <button onClick={() => go("rastrear")} className={`transition-smooth hover:text-primary ${section === "rastrear" ? "text-primary" : ""}`}>Rastrear</button>
+            <button onClick={() => go("conta")} className={`transition-smooth hover:text-primary ${section === "conta" ? "text-primary" : ""}`}>Conta</button>
             <a href="#suporte" className="transition-smooth hover:text-primary inline-flex items-center gap-1"><LifeBuoy className="w-3.5 h-3.5" /> Suporte</a>
           </div>
           <Button onClick={() => go("checkout")} variant="default" size="sm" className="bg-primary hover:bg-primary-deep rounded-full">
@@ -50,6 +54,8 @@ const Index = () => {
         {section === "home" && <Home onShop={() => go("product")} />}
         {section === "product" && <Product onBuy={() => go("checkout")} />}
         {section === "checkout" && <Checkout />}
+        {section === "rastrear" && <Tracking />}
+        {section === "conta" && <Auth />}
       </main>
 
       <Support />
