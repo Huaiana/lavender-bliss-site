@@ -44,10 +44,10 @@ export function aplicarCupom(codigo: string, valorOriginal: number): DescontoRes
     .findAll()
     .find((c) => c.codigo_cupom.toUpperCase() === codigo.trim().toUpperCase() && c.ativo === 1);
   if (!cupom) throw new Error("Cupom inválido ou expirado.");
-  if (cupom.tipo === "percentual") {
-    return { codigo: cupom.codigo_cupom, ...calcularDesconto(valorOriginal, cupom.porcentagem_desconto) };
+  if (cupom.tipo === "PORCENTAGEM") {
+    return { codigo: cupom.codigo_cupom, ...calcularDesconto(valorOriginal, cupom.porcentagem_desconto ?? 0) };
   }
-  const valorDesconto = Math.min(cupom.valor_fixo_desconto, valorOriginal);
+  const valorDesconto = Math.min(cupom.valor_fixo_desconto ?? 0, valorOriginal);
   return {
     codigo: cupom.codigo_cupom,
     valorOriginal,
