@@ -8,12 +8,17 @@ export function criarCliente(input: {
   email: string;
   endereco?: string;
   telefone?: string;
-  cpf?: string;
 }): Cliente {
   if (typeof input.nome !== "string" || typeof input.email !== "string") {
     throw new Error("Nome e email devem ser strings.");
   }
-  const novo: Cliente = { id: Date.now(), ...input };
+  const novo: Cliente = {
+    id: Date.now(),
+    nome: input.nome,
+    email: input.email,
+    endereco: input.endereco ?? "",
+    telefone: input.telefone,
+  };
   clienteRepo.save(novo);
   return novo;
 }
@@ -39,10 +44,10 @@ export function aplicarCupom(codigo: string, valorOriginal: number): DescontoRes
     .findAll()
     .find((c) => c.codigo_cupom.toUpperCase() === codigo.trim().toUpperCase() && c.ativo === 1);
   if (!cupom) throw new Error("Cupom inválido ou expirado.");
-  if (cupom.tipo === "percentual") {
-    return { codigo: cupom.codigo_cupom, ...calcularDesconto(valorOriginal, cupom.porcentagem_desconto) };
+  if (cupom.tipo === "PORCENTAGEM") {
+    return { codigo: cupom.codigo_cupom, ...calcularDesconto(valorOriginal, cupom.porcentagem_desconto ?? 0) };
   }
-  const valorDesconto = Math.min(cupom.valor_fixo_desconto, valorOriginal);
+  const valorDesconto = Math.min(cupom.valor_fixo_desconto ?? 0, valorOriginal);
   return {
     codigo: cupom.codigo_cupom,
     valorOriginal,
@@ -118,7 +123,8 @@ export function criarPedido(input: NovoPedidoInput): Pedido {
     quantidade: input.quantidade,
     valor_unitario,
     valor_total,
-    status: "criado",
+    status_compra: "PENDENTE",
+    status: "PENDENTE",
     data_criacao: agora,
     data_atualizacao: agora,
     desconto_id,
@@ -152,12 +158,14 @@ export function criarSuporte(input: NovoSuporteInput): Suporte {
   if (!input.assunto.trim() || !input.mensagem.trim()) {
     throw new Error("Assunto e mensagem são obrigatórios.");
   }
+  const agora = new Date().toISOString();
   const novo: Suporte = {
     id: Date.now(),
     cliente_id: input.cliente_id,
     assunto: input.assunto.trim(),
     mensagem: input.mensagem.trim(),
-    data_criacao: new Date().toISOString(),
+    data_contato: agora,
+    data_criacao: agora,
     status: "Aberto",
   };
   suporteRepo.save(novo);
