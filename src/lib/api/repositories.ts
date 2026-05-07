@@ -1,5 +1,13 @@
-// Repositórios em memória (portados do backend)
-import type { Cliente, Desconto, Frete, Pedido, Produto, Suporte } from "./models";
+// Repositórios em memória — alinhados ao SQLite.sql do backend
+import type {
+  AcompanhamentoEntrega,
+  Cliente,
+  Desconto,
+  Frete,
+  Pedido,
+  Produto,
+  Suporte,
+} from "./models";
 
 class Repository<T> {
   protected items: T[] = [];
@@ -10,6 +18,8 @@ class Repository<T> {
 export class ClienteRepository extends Repository<Cliente> {}
 export class DescontoRepository extends Repository<Desconto> {}
 export class FreteRepository extends Repository<Frete> {}
+export class AcompanhamentoEntregaRepository extends Repository<AcompanhamentoEntrega> {}
+
 const PEDIDOS_KEY = "lavanda.pedidos";
 
 export class PedidoRepository {
@@ -27,7 +37,6 @@ export class PedidoRepository {
     } catch { /* ignore */ }
   }
   save(p: Pedido) {
-    // evita duplicar o seed em reloads
     if (!this.items.some(x => x.id === p.id)) this.items.push(p);
     this.persist();
   }
@@ -58,16 +67,17 @@ export class ProdutoRepository {
   remove(id: number) { this.produtos = this.produtos.filter(p => p.id !== id); }
 }
 
-// Singletons compartilhados
+// Singletons
 export const clienteRepo = new ClienteRepository();
 export const descontoRepo = new DescontoRepository();
 export const freteRepo = new FreteRepository();
 export const pedidoRepo = new PedidoRepository();
 export const produtoRepo = new ProdutoRepository();
 export const suporteRepo = new SuporteRepository();
+export const acompanhamentoRepo = new AcompanhamentoEntregaRepository();
 
 // ============================================================
-// SEED — espelha o SQLite.sql do backend (api_projeto-integrador-gp12)
+// SEED — espelha exatamente o src/SQLite.sql do backend
 // ============================================================
 
 // --- Produto ---
@@ -80,32 +90,32 @@ produtoRepo.save({
   beneficios: "Hidrata; Pele macia; Aroma calmante; Refrescante",
   modo_uso: "Agite antes de usar e aplique na pele",
   indicacao: "Todos os tipos de pele",
-  estoque: 99, // 100 - 1 (UPDATE do seed)
+  estoque: 99, // 100 - 1 (UPDATE no seed do back)
 });
 
 // --- Frete ---
 freteRepo.save({
   id: 1,
-  endereco_origem: "Avenida Ademar de Barros, 576",
-  endereco_destino: "",
+  endereco_origem: "Avenida, Ademar de Barros, 576",
   valor_por_km: 0.2,
   distancia_maxima: 0.5,
+  status: "ATIVO",
 });
 
 // --- Descontos / Cupons ---
 descontoRepo.save({
-  id: 1, codigo_cupom: "PROJETO20", tipo: "percentual",
-  porcentagem_desconto: 20, valor_fixo_desconto: 0,
+  id: 1, codigo_cupom: "PROJETO20", tipo: "PORCENTAGEM",
+  porcentagem_desconto: 20, valor_fixo_desconto: null,
+  data_validade: null, ativo: 1,
+});
+descontoRepo.save({
+  id: 2, codigo_cupom: "LAVANDA10", tipo: "PORCENTAGEM",
+  porcentagem_desconto: 10, valor_fixo_desconto: null,
   data_validade: "2026-12-31", ativo: 1,
 });
 descontoRepo.save({
-  id: 2, codigo_cupom: "LAVANDA10", tipo: "percentual",
-  porcentagem_desconto: 10, valor_fixo_desconto: 0,
-  data_validade: "2026-12-31", ativo: 1,
-});
-descontoRepo.save({
-  id: 3, codigo_cupom: "BEMVINDO5", tipo: "fixo",
-  porcentagem_desconto: 0, valor_fixo_desconto: 5,
+  id: 3, codigo_cupom: "BEMVINDO5", tipo: "FIXO",
+  porcentagem_desconto: null, valor_fixo_desconto: 5,
   data_validade: "2026-12-31", ativo: 1,
 });
 
@@ -132,9 +142,6 @@ pedidoRepo.save({
   quantidade: 1,
   valor_unitario: 49.9,
   valor_total: 49.9,
-  status: "criado",
-  data_criacao: "2025-10-01T12:00:00.000Z",
-  data_atualizacao: "2025-10-01T12:00:00.000Z",
   desconto_id: 1,
   data_venda: "2025-10-01T12:00:00.000Z",
   endereco_entrega: "Rua das Flores, 123",
@@ -143,4 +150,18 @@ pedidoRepo.save({
   valor_desconto: 9.98,
   total_final: 59.92,
   metodo_pagamento: "PIX",
+  status_compra: "PENDENTE",
+  data_criacao: "2025-10-01T12:00:00.000Z",
+  data_atualizacao: "2025-10-01T12:00:00.000Z",
+  status: "PENDENTE",
+});
+
+// --- Acompanhamento de entrega ---
+acompanhamentoRepo.save({
+  id: 1,
+  pedido_id: 1,
+  status_entrega: "EM ROTA",
+  previsao_entrega: "2024-07-01T15:00:00.000Z",
+  cliente_id: 1,
+  frete_id: 1,
 });
