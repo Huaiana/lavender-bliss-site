@@ -158,12 +158,14 @@ export function criarSuporte(input: NovoSuporteInput): Suporte {
   if (!input.assunto.trim() || !input.mensagem.trim()) {
     throw new Error("Assunto e mensagem são obrigatórios.");
   }
+  const agora = new Date().toISOString();
   const novo: Suporte = {
     id: Date.now(),
     cliente_id: input.cliente_id,
     assunto: input.assunto.trim(),
     mensagem: input.mensagem.trim(),
-    data_criacao: new Date().toISOString(),
+    data_contato: agora,
+    data_criacao: agora,
     status: "Aberto",
   };
   suporteRepo.save(novo);
