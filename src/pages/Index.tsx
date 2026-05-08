@@ -1,10 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
 import heroImage from "@/assets/lavender-hero.jpg";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { toast } from "sonner";
-import { Droplet, Sparkles, Leaf, Wind, ShoppingBag, ArrowRight, LifeBuoy } from "lucide-react";
+import { Droplet, Sparkles, Leaf, Wind, ShoppingBag, ArrowRight, LifeBuoy, Tag, X } from "lucide-react";
 import {
+  aplicarCupom,
   calcularFrete,
   criarPedido,
   estimarDistanciaPorCep,
