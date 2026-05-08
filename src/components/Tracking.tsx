@@ -5,6 +5,7 @@ import { Label } from "@/components/ui/label";
 import { Package, Truck, CheckCircle2, Clock } from "lucide-react";
 import { obterPedidos } from "@/lib/api/services";
 import type { Pedido } from "@/lib/api/models";
+import { getSessao } from "@/components/Auth";
 
 type StatusEntrega = "EM ROTA" | "A CAMINHO" | "ENTREGUE";
 
@@ -24,8 +25,22 @@ function previsao(p: Pedido): string {
 const Tracking = () => {
   const [pedidoId, setPedidoId] = useState("");
   const [pedidos, setPedidos] = useState<Pedido[]>([]);
+  const sessao = getSessao();
 
-  useEffect(() => { setPedidos(obterPedidos()); }, []);
+  useEffect(() => {
+    if (!sessao) return;
+    setPedidos(obterPedidos().filter((p) => p.cliente_id === sessao.id));
+  }, [sessao]);
+
+  if (!sessao) {
+    return (
+      <section className="container py-20 max-w-2xl text-center">
+        <div className="text-xs tracking-widest uppercase text-primary mb-3">Acompanhamento</div>
+        <h2 className="font-display text-5xl mb-4">Rastrear <span className="italic text-primary">entrega</span></h2>
+        <p className="text-muted-foreground">Faça login na sua conta para visualizar seus pedidos.</p>
+      </section>
+    );
+  }
 
   const filtrados = pedidoId.trim()
     ? pedidos.filter((p) => String(p.id).includes(pedidoId.trim()))
