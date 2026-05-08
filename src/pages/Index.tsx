@@ -224,6 +224,26 @@ const Checkout = () => {
     );
   }
 
+  const handleAplicarCupom = () => {
+    const codigo = cupomInput.trim();
+    if (!codigo) return;
+    try {
+      const r = aplicarCupom(codigo, subtotal);
+      setCupomAplicado({ codigo: r.codigo, valor: r.valorDesconto });
+      toast.success(`Cupom ${r.codigo} aplicado!`, {
+        description: `Desconto de R$ ${r.valorDesconto.toFixed(2)}`,
+      });
+    } catch (err) {
+      setCupomAplicado(null);
+      toast.error(err instanceof Error ? err.message : "Cupom inválido");
+    }
+  };
+
+  const handleRemoverCupom = () => {
+    setCupomAplicado(null);
+    setCupomInput("");
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     try {
@@ -238,6 +258,7 @@ const Checkout = () => {
         quantidade: 1,
         endereco_entrega: `${cliente.endereco}${cliente.cep ? ` — CEP ${cliente.cep}` : ""}`,
         distancia_calculada: frete.distancia,
+        cupom: cupomAplicado?.codigo,
         metodo_pagamento: metodo,
       });
       toast.success("Pedido realizado!", {
