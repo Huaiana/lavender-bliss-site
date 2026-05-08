@@ -59,7 +59,7 @@ const Tracking = () => {
           <Label className="text-xs tracking-wider uppercase text-muted-foreground">Número do pedido</Label>
           <Input value={pedidoId} onChange={(e) => setPedidoId(e.target.value)} placeholder="Digite o ID ou deixe vazio para ver todos" className="rounded-xl h-12 bg-background" />
         </div>
-        <Button onClick={() => setPedidos(obterPedidos())} variant="outline" className="rounded-full h-12">Atualizar</Button>
+        <Button onClick={() => setPedidos(obterPedidos().filter((p) => p.cliente_id === sessao.id))} variant="outline" className="rounded-full h-12">Atualizar</Button>
       </div>
 
       {filtrados.length === 0 ? (
