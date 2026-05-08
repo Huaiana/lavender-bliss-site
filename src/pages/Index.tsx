@@ -1,20 +1,18 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import heroImage from "@/assets/lavender-hero.jpg";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { toast } from "sonner";
-import { Droplet, Sparkles, Leaf, Wind, ShoppingBag, ArrowRight, Tag, Truck, LifeBuoy } from "lucide-react";
+import { Droplet, Sparkles, Leaf, Wind, ShoppingBag, ArrowRight, LifeBuoy } from "lucide-react";
 import {
-  aplicarCupom,
   calcularFrete,
-  criarCliente,
   criarPedido,
   estimarDistanciaPorCep,
 } from "@/lib/api/services";
+import { clienteRepo } from "@/lib/api/repositories";
+import type { Cliente } from "@/lib/api/models";
 import Support from "@/components/Support";
-import Auth from "@/components/Auth";
+import Auth, { getSessao } from "@/components/Auth";
 import Tracking from "@/components/Tracking";
 
 const Index = () => {
@@ -186,131 +184,98 @@ const Product = ({ onBuy }: { onBuy: () => void }) => (
 const PRECO_BASE = 49.9;
 
 const Checkout = () => {
+  const sessao = getSessao();
+  const cliente: Cliente | undefined = sessao
+    ? clienteRepo.findAll().find((c) => c.id === sessao.id)
+    : undefined;
+
   const [payment, setPayment] = useState("pix");
-  const [nome, setNome] = useState("");
-  const [email, setEmail] = useState("");
-  const [address, setAddress] = useState("Rua Ademar de Barros, 576");
-  const [city, setCity] = useState("São Paulo");
-  const [cep, setCep] = useState("");
-  const [cupom, setCupom] = useState("");
-  const [cupomAplicado, setCupomAplicado] = useState<{ codigo: string; valorDesconto: number } | null>(null);
+  const [cardKind, setCardKind] = useState<"credito" | "debito">("credito");
   const [frete, setFrete] = useState<{ valor: number; distancia: number } | null>(null);
 
   const subtotal = PRECO_BASE;
-  const total = useMemo(() => {
-    return +(subtotal + (frete?.valor ?? 0) - (cupomAplicado?.valorDesconto ?? 0)).toFixed(2);
-  }, [subtotal, frete, cupomAplicado]);
+  const total = useMemo(
+    () => +(subtotal + (frete?.valor ?? 0)).toFixed(2),
+    [subtotal, frete]
+  );
 
-  const handleCalcularFrete = () => {
+  useEffect(() => {
+    if (!cliente?.cep) return;
     try {
-      const distancia = estimarDistanciaPorCep(cep);
+      const distancia = estimarDistanciaPorCep(cliente.cep);
       const { valorFrete } = calcularFrete(distancia);
       setFrete({ valor: valorFrete, distancia });
-      toast.success(`Frete calculado: ~${distancia} km`);
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Erro ao calcular frete");
+    } catch {
+      setFrete(null);
     }
-  };
+  }, [cliente?.cep]);
 
-  const handleAplicarCupom = () => {
-    try {
-      const r = aplicarCupom(cupom, subtotal);
-      setCupomAplicado({ codigo: r.codigo, valorDesconto: r.valorDesconto });
-      toast.success(`Cupom ${r.codigo} aplicado!`, { description: `−R$ ${r.valorDesconto.toFixed(2)}` });
-    } catch (err) {
-      setCupomAplicado(null);
-      toast.error(err instanceof Error ? err.message : "Cupom inválido");
-    }
-  };
+  if (!sessao || !cliente) {
+    return (
+      <section className="container py-20 max-w-2xl text-center">
+        <div className="text-xs tracking-widest uppercase text-primary mb-3">Checkout</div>
+        <h2 className="font-display text-5xl mb-4">Finalizar <span className="italic text-primary">compra</span></h2>
+        <p className="text-muted-foreground">Faça login na sua conta para continuar a compra.</p>
+      </section>
+    );
+  }
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      if (!nome || !email) {
-        toast.error("Preencha nome e e-mail.");
-        return;
-      }
       if (!frete) {
-        toast.error("Calcule o frete antes de finalizar.");
+        toast.error("CEP do cadastro inválido. Atualize seus dados.");
         return;
       }
-      const cliente = criarCliente({ nome, email, endereco: `${address}, ${city}` });
+      const metodo = payment === "cartao" ? cardKind : payment;
       const pedido = criarPedido({
         cliente_id: cliente.id,
         produto_id: 1,
         quantidade: 1,
-        endereco_entrega: `${address}, ${city} — CEP ${cep}`,
+        endereco_entrega: `${cliente.endereco}${cliente.cep ? ` — CEP ${cliente.cep}` : ""}`,
         distancia_calculada: frete.distancia,
-        cupom: cupomAplicado?.codigo,
-        metodo_pagamento: payment,
+        metodo_pagamento: metodo,
       });
       toast.success("Pedido realizado!", {
-        description: `#${pedido.id} · ${payment.toUpperCase()} · Total R$ ${pedido.total_final.toFixed(2)}`,
+        description: `#${pedido.id} · ${metodo.toUpperCase()} · Total R$ ${pedido.total_final.toFixed(2)}`,
       });
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Erro ao criar pedido");
     }
   };
 
+  const Field = ({ label, value }: { label: string; value?: string }) => (
+    <div>
+      <div className="text-xs tracking-wider uppercase text-muted-foreground">{label}</div>
+      <div className="text-sm mt-1">{value || <span className="italic text-muted-foreground">não informado</span>}</div>
+    </div>
+  );
+
   return (
     <section className="container py-20 max-w-5xl">
       <div className="text-center mb-12 animate-fade-up">
         <div className="text-xs tracking-widest uppercase text-primary mb-3">Checkout</div>
         <h2 className="font-display text-5xl md:text-6xl">Finalizar compra</h2>
+        <p className="text-muted-foreground mt-3 font-light">Confirme seus dados e escolha a forma de pagamento.</p>
       </div>
 
       <form onSubmit={handleSubmit} className="grid lg:grid-cols-[1fr_400px] gap-8">
         <div className="space-y-8">
           <div className="p-8 rounded-3xl bg-card border border-border/50 shadow-soft space-y-6">
-            <h3 className="font-display text-2xl">Seus dados</h3>
-            <div className="grid sm:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="nome" className="text-xs tracking-wider uppercase text-muted-foreground">Nome</Label>
-                <Input id="nome" value={nome} onChange={(e) => setNome(e.target.value)} placeholder="Seu nome" className="rounded-xl h-12 bg-background" />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="email" className="text-xs tracking-wider uppercase text-muted-foreground">E-mail</Label>
-                <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="voce@email.com" className="rounded-xl h-12 bg-background" />
-              </div>
+            <div className="flex items-baseline justify-between">
+              <h3 className="font-display text-2xl">Confirme seus dados</h3>
+              <span className="text-xs text-muted-foreground">do cadastro</span>
             </div>
-          </div>
-
-          <div className="p-8 rounded-3xl bg-card border border-border/50 shadow-soft space-y-6">
-            <h3 className="font-display text-2xl">Endereço de entrega</h3>
-            <div className="space-y-2">
-              <Label htmlFor="addr" className="text-xs tracking-wider uppercase text-muted-foreground">Endereço</Label>
-              <Input id="addr" value={address} onChange={(e) => setAddress(e.target.value)} className="rounded-xl h-12 bg-background" />
+            <div className="grid sm:grid-cols-2 gap-5">
+              <Field label="Nome" value={cliente.nome} />
+              <Field label="E-mail" value={cliente.email} />
+              <Field label="Telefone" value={cliente.telefone} />
+              <Field label="CEP" value={cliente.cep} />
+              <div className="sm:col-span-2"><Field label="Endereço de entrega" value={cliente.endereco} /></div>
             </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="city" className="text-xs tracking-wider uppercase text-muted-foreground">Cidade</Label>
-                <Input id="city" value={city} onChange={(e) => setCity(e.target.value)} className="rounded-xl h-12 bg-background" />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="cep" className="text-xs tracking-wider uppercase text-muted-foreground">CEP</Label>
-                <Input id="cep" value={cep} onChange={(e) => setCep(e.target.value)} placeholder="00000-000" className="rounded-xl h-12 bg-background" />
-              </div>
-            </div>
-            <Button type="button" variant="outline" onClick={handleCalcularFrete} className="rounded-full">
-              <Truck className="w-4 h-4 mr-2" /> Calcular frete
-            </Button>
-            {frete && (
-              <p className="text-sm text-muted-foreground">
-                Distância estimada: <span className="text-foreground">{frete.distancia} km</span> · Frete:{" "}
-                <span className="text-foreground">R$ {frete.valor.toFixed(2)}</span>
-              </p>
-            )}
-          </div>
-
-          <div className="p-8 rounded-3xl bg-card border border-border/50 shadow-soft space-y-6">
-            <h3 className="font-display text-2xl">Cupom de desconto</h3>
-            <div className="flex gap-3">
-              <Input value={cupom} onChange={(e) => setCupom(e.target.value)} placeholder="LAVANDA10" className="rounded-xl h-12 bg-background" />
-              <Button type="button" variant="outline" onClick={handleAplicarCupom} className="rounded-full">
-                <Tag className="w-4 h-4 mr-2" /> Aplicar
-              </Button>
-            </div>
-            <p className="text-xs text-muted-foreground">Experimente <code className="text-primary">LAVANDA10</code> ou <code className="text-primary">BEMVINDO5</code></p>
+            <p className="text-xs text-muted-foreground">
+              Para alterar, edite na sua <span className="text-primary">conta</span>.
+            </p>
           </div>
 
           <div className="p-8 rounded-3xl bg-card border border-border/50 shadow-soft space-y-6">
@@ -318,9 +283,9 @@ const Checkout = () => {
             <RadioGroup value={payment} onValueChange={setPayment} className="space-y-3">
               {[
                 { id: "pix", label: "Pix", desc: "Aprovação imediata" },
-                { id: "credito", label: "Cartão de Crédito", desc: "Até 3x sem juros" },
-                { id: "debito", label: "Cartão de Débito", desc: "Pagamento à vista" },
-              ].map(opt => (
+                { id: "boleto", label: "Boleto bancário", desc: "Vencimento em 3 dias úteis" },
+                { id: "cartao", label: "Cartão de Crédito ou Débito", desc: "Crédito em até 3x sem juros" },
+              ].map((opt) => (
                 <label key={opt.id} htmlFor={opt.id} className={`flex items-center gap-4 p-5 rounded-xl border cursor-pointer transition-smooth ${payment === opt.id ? "border-primary bg-secondary/60" : "border-border hover:border-primary/50"}`}>
                   <RadioGroupItem value={opt.id} id={opt.id} />
                   <div className="flex-1">
@@ -330,6 +295,23 @@ const Checkout = () => {
                 </label>
               ))}
             </RadioGroup>
+
+            {payment === "cartao" && (
+              <div className="pl-2 pt-2">
+                <div className="text-xs tracking-wider uppercase text-muted-foreground mb-3">Tipo do cartão</div>
+                <RadioGroup value={cardKind} onValueChange={(v) => setCardKind(v as "credito" | "debito")} className="grid grid-cols-2 gap-3">
+                  {[
+                    { id: "credito", label: "Crédito" },
+                    { id: "debito", label: "Débito" },
+                  ].map((opt) => (
+                    <label key={opt.id} htmlFor={`card-${opt.id}`} className={`flex items-center gap-3 p-4 rounded-xl border cursor-pointer transition-smooth ${cardKind === opt.id ? "border-primary bg-secondary/60" : "border-border hover:border-primary/50"}`}>
+                      <RadioGroupItem value={opt.id} id={`card-${opt.id}`} />
+                      <span className="text-sm font-medium">{opt.label}</span>
+                    </label>
+                  ))}
+                </RadioGroup>
+              </div>
+            )}
           </div>
         </div>
 
@@ -349,21 +331,15 @@ const Checkout = () => {
             <div className="flex justify-between"><span className="text-muted-foreground">Subtotal</span><span>R$ {subtotal.toFixed(2)}</span></div>
             <div className="flex justify-between">
               <span className="text-muted-foreground">Frete</span>
-              <span>{frete ? `R$ ${frete.valor.toFixed(2)}` : <span className="italic text-xs">informe o CEP</span>}</span>
+              <span>{frete ? `R$ ${frete.valor.toFixed(2)}` : <span className="italic text-xs">cadastre um CEP</span>}</span>
             </div>
-            {cupomAplicado && (
-              <div className="flex justify-between text-primary">
-                <span>Cupom {cupomAplicado.codigo}</span>
-                <span>−R$ {cupomAplicado.valorDesconto.toFixed(2)}</span>
-              </div>
-            )}
           </div>
           <div className="flex justify-between items-baseline pt-4 border-t border-border/60">
             <span className="font-display text-xl">Total</span>
             <span className="font-display text-3xl text-primary">R$ {total.toFixed(2)}</span>
           </div>
           <Button type="submit" size="lg" className="w-full bg-primary hover:bg-primary-deep rounded-full h-14 text-base shadow-elegant">
-            Comprar agora
+            Confirmar pedido
             <ArrowRight className="w-4 h-4 ml-2" />
           </Button>
           <p className="text-xs text-center text-muted-foreground">Compra 100% segura · Entrega para todo o Brasil</p>
