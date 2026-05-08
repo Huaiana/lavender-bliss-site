@@ -194,11 +194,13 @@ const Checkout = () => {
   const [payment, setPayment] = useState("pix");
   const [cardKind, setCardKind] = useState<"credito" | "debito">("credito");
   const [frete, setFrete] = useState<{ valor: number; distancia: number } | null>(null);
+  const [cupomInput, setCupomInput] = useState("");
+  const [cupomAplicado, setCupomAplicado] = useState<{ codigo: string; valor: number } | null>(null);
 
   const subtotal = PRECO_BASE;
   const total = useMemo(
-    () => +(subtotal + (frete?.valor ?? 0)).toFixed(2),
-    [subtotal, frete]
+    () => +(Math.max(0, subtotal - (cupomAplicado?.valor ?? 0)) + (frete?.valor ?? 0)).toFixed(2),
+    [subtotal, frete, cupomAplicado]
   );
 
   useEffect(() => {
