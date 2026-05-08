@@ -1,10 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
 import heroImage from "@/assets/lavender-hero.jpg";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { toast } from "sonner";
-import { Droplet, Sparkles, Leaf, Wind, ShoppingBag, ArrowRight, LifeBuoy } from "lucide-react";
+import { Droplet, Sparkles, Leaf, Wind, ShoppingBag, ArrowRight, LifeBuoy, Tag, X } from "lucide-react";
 import {
+  aplicarCupom,
   calcularFrete,
   criarPedido,
   estimarDistanciaPorCep,
@@ -192,11 +194,13 @@ const Checkout = () => {
   const [payment, setPayment] = useState("pix");
   const [cardKind, setCardKind] = useState<"credito" | "debito">("credito");
   const [frete, setFrete] = useState<{ valor: number; distancia: number } | null>(null);
+  const [cupomInput, setCupomInput] = useState("");
+  const [cupomAplicado, setCupomAplicado] = useState<{ codigo: string; valor: number } | null>(null);
 
   const subtotal = PRECO_BASE;
   const total = useMemo(
-    () => +(subtotal + (frete?.valor ?? 0)).toFixed(2),
-    [subtotal, frete]
+    () => +(Math.max(0, subtotal - (cupomAplicado?.valor ?? 0)) + (frete?.valor ?? 0)).toFixed(2),
+    [subtotal, frete, cupomAplicado]
   );
 
   useEffect(() => {
@@ -220,6 +224,26 @@ const Checkout = () => {
     );
   }
 
+  const handleAplicarCupom = () => {
+    const codigo = cupomInput.trim();
+    if (!codigo) return;
+    try {
+      const r = aplicarCupom(codigo, subtotal);
+      setCupomAplicado({ codigo: r.codigo, valor: r.valorDesconto });
+      toast.success(`Cupom ${r.codigo} aplicado!`, {
+        description: `Desconto de R$ ${r.valorDesconto.toFixed(2)}`,
+      });
+    } catch (err) {
+      setCupomAplicado(null);
+      toast.error(err instanceof Error ? err.message : "Cupom inválido");
+    }
+  };
+
+  const handleRemoverCupom = () => {
+    setCupomAplicado(null);
+    setCupomInput("");
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     try {
@@ -234,6 +258,7 @@ const Checkout = () => {
         quantidade: 1,
         endereco_entrega: `${cliente.endereco}${cliente.cep ? ` — CEP ${cliente.cep}` : ""}`,
         distancia_calculada: frete.distancia,
+        cupom: cupomAplicado?.codigo,
         metodo_pagamento: metodo,
       });
       toast.success("Pedido realizado!", {
@@ -327,8 +352,43 @@ const Checkout = () => {
               <div className="font-display text-lg text-primary mt-1">R$ {PRECO_BASE.toFixed(2)}</div>
             </div>
           </div>
+          <div className="space-y-3 pb-2 border-b border-border/60">
+            <div className="flex items-center gap-2 text-xs tracking-wider uppercase text-muted-foreground">
+              <Tag className="w-3.5 h-3.5 text-primary" /> Cupom de desconto
+            </div>
+            {cupomAplicado ? (
+              <div className="flex items-center justify-between p-3 rounded-xl bg-secondary/60 border border-primary/30">
+                <div>
+                  <div className="font-medium text-sm">{cupomAplicado.codigo}</div>
+                  <div className="text-xs text-primary">−R$ {cupomAplicado.valor.toFixed(2)}</div>
+                </div>
+                <button type="button" onClick={handleRemoverCupom} className="text-muted-foreground hover:text-foreground transition-smooth p-1" aria-label="Remover cupom">
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            ) : (
+              <div className="flex gap-2">
+                <Input
+                  value={cupomInput}
+                  onChange={(e) => setCupomInput(e.target.value.toUpperCase())}
+                  placeholder="Ex: LAVANDA10"
+                  className="h-10 rounded-xl bg-background"
+                />
+                <Button type="button" variant="outline" onClick={handleAplicarCupom} className="rounded-xl h-10">
+                  Aplicar
+                </Button>
+              </div>
+            )}
+            <p className="text-[11px] text-muted-foreground">Use <span className="font-medium text-primary">LAVANDA10</span> e ganhe 10% na primeira compra.</p>
+          </div>
           <div className="space-y-2 text-sm">
             <div className="flex justify-between"><span className="text-muted-foreground">Subtotal</span><span>R$ {subtotal.toFixed(2)}</span></div>
+            {cupomAplicado && (
+              <div className="flex justify-between text-primary">
+                <span>Desconto ({cupomAplicado.codigo})</span>
+                <span>−R$ {cupomAplicado.valor.toFixed(2)}</span>
+              </div>
+            )}
             <div className="flex justify-between">
               <span className="text-muted-foreground">Frete</span>
               <span>{frete ? `R$ ${frete.valor.toFixed(2)}` : <span className="italic text-xs">cadastre um CEP</span>}</span>
