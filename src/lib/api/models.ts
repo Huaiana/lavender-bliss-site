@@ -7,6 +7,7 @@ export interface Cliente {
   data_nascimento?: string;
   endereco: string;
   telefone?: string;
+  cep?: string;
 }
 
 export type DescontoTipo = "PORCENTAGEM" | "FIXO";

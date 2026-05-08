@@ -32,6 +32,7 @@ const Auth = () => {
   const [senha, setSenha] = useState("");
   const [dataNasc, setDataNasc] = useState("");
   const [endereco, setEndereco] = useState("");
+  const [cep, setCep] = useState("");
   const [telefone, setTelefone] = useState("");
 
   const persistir = (c: { id: number; nome: string; email: string }) => {
@@ -61,6 +62,7 @@ const Auth = () => {
       // injeta extras
       (novo as any).senha = senha;
       (novo as any).data_nascimento = dataNasc;
+      (novo as any).cep = cep;
       persistir({ id: novo.id, nome: novo.nome, email: novo.email });
       toast.success("Conta criada!");
     } catch (err) {
@@ -142,7 +144,11 @@ const Auth = () => {
               <Label className="text-xs tracking-wider uppercase text-muted-foreground">Endereço</Label>
               <Input value={endereco} onChange={(e) => setEndereco(e.target.value)} className="rounded-xl h-12 bg-background" />
             </div>
-            <div className="space-y-2 sm:col-span-2">
+            <div className="space-y-2">
+              <Label className="text-xs tracking-wider uppercase text-muted-foreground">CEP</Label>
+              <Input value={cep} onChange={(e) => setCep(e.target.value)} placeholder="00000-000" className="rounded-xl h-12 bg-background" />
+            </div>
+            <div className="space-y-2">
               <Label className="text-xs tracking-wider uppercase text-muted-foreground">Telefone</Label>
               <Input value={telefone} onChange={(e) => setTelefone(e.target.value)} placeholder="(00) 00000-0000" className="rounded-xl h-12 bg-background" />
             </div>
