@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import heroImage from "@/assets/lavender-hero.jpg";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,7 +13,8 @@ import {
   estimarDistanciaPorCep,
 } from "@/lib/api/services";
 import { clienteRepo } from "@/lib/api/repositories";
-import type { Cliente } from "@/lib/api/models";
+import type { Cliente, Produto } from "@/lib/api/models";
+import { fetchProdutoPorId } from "@/lib/api/produto-api";
 import Support from "@/components/Support";
 import Auth, { getSessao } from "@/components/Auth";
 import Tracking from "@/components/Tracking";
@@ -20,10 +22,18 @@ import Tracking from "@/components/Tracking";
 const Index = () => {
   const [section, setSection] = useState<"home" | "product" | "checkout" | "conta" | "rastrear">("home");
 
+  const { data: produto, isLoading: produtoLoading } = useQuery({
+    queryKey: ["produto", 1],
+    queryFn: () => fetchProdutoPorId(1),
+  });
+
   const go = (s: typeof section) => {
     setSection(s);
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
+
+  const preco = produto?.preco_base ?? 49.9;
+  const precoFormatado = preco.toLocaleString("pt-BR", { minimumFractionDigits: 2 });
 
   return (
     <div className="min-h-screen bg-background">
@@ -45,15 +55,15 @@ const Index = () => {
             <a href="#suporte" className="transition-smooth hover:text-primary inline-flex items-center gap-1"><LifeBuoy className="w-3.5 h-3.5" /> Suporte</a>
           </div>
           <Button onClick={() => go("checkout")} variant="default" size="sm" className="bg-primary hover:bg-primary-deep rounded-full">
-            <ShoppingBag className="w-4 h-4 mr-2" /> R$ 49,90
+            <ShoppingBag className="w-4 h-4 mr-2" /> R$ {precoFormatado}
           </Button>
         </div>
       </nav>
 
       <main className="pt-20">
         {section === "home" && <Home onShop={() => go("product")} />}
-        {section === "product" && <Product onBuy={() => go("checkout")} />}
-        {section === "checkout" && <Checkout />}
+        {section === "product" && <Product onBuy={() => go("checkout")} produto={produto} isLoading={produtoLoading} />}
+        {section === "checkout" && <Checkout precoProduto={preco} />}
         {section === "rastrear" && <Tracking />}
         {section === "conta" && <Auth />}
       </main>
@@ -129,63 +139,80 @@ const Home = ({ onShop }: { onShop: () => void }) => (
   </section>
 );
 
-const Product = ({ onBuy }: { onBuy: () => void }) => (
-  <section className="container py-20">
-    <div className="grid lg:grid-cols-2 gap-16 items-start">
-      <div className="lg:sticky lg:top-28">
-        <div className="relative aspect-square rounded-3xl bg-gradient-hero overflow-hidden shadow-elegant">
-          <img src={heroImage} alt="Óleo bifásico de lavanda" className="w-full h-full object-cover" />
+const Product = ({ onBuy, produto, isLoading }: { onBuy: () => void; produto?: Produto; isLoading: boolean }) => {
+  if (isLoading) {
+    return (
+      <section className="container py-20 flex items-center justify-center min-h-[60vh]">
+        <div className="text-center space-y-4">
+          <div className="w-12 h-12 rounded-full border-4 border-primary border-t-transparent animate-spin mx-auto" />
+          <p className="text-muted-foreground font-light">Carregando produto...</p>
         </div>
-      </div>
+      </section>
+    );
+  }
 
-      <div className="space-y-8 animate-fade-up">
-        <div>
-          <div className="text-xs tracking-widest uppercase text-primary mb-3">Skincare · 120ml</div>
-          <h2 className="font-display text-5xl md:text-6xl leading-[0.95] mb-4">
-            Óleo Bifásico
-            <br /><span className="italic">de Lavanda</span>
-          </h2>
-          <div className="text-3xl font-display text-primary">R$ 49,90</div>
-        </div>
+  const nome = produto?.nome ?? "Óleo Bifásico de Lavanda";
+  const descricao = produto?.descricao ?? "Um óleo leve que hidrata, perfuma e deixa sua pele macia com aroma suave de lavanda.";
+  const volume = produto?.volume ?? "120 ml";
+  const preco = produto?.preco_base ?? 49.9;
+  const precoFormatado = preco.toLocaleString("pt-BR", { minimumFractionDigits: 2 });
+  const beneficios = produto?.beneficios
+    ? produto.beneficios.split(";").map((b) => b.trim()).filter(Boolean)
+    : ["Hidrata a pele", "Deixa macia", "Aroma calmante", "Sensação refrescante"];
+  const modoUso = produto?.modo_uso ?? "Agite antes de usar e aplique na pele espalhando bem.";
+  const indicacao = produto?.indicacao ?? "Todos os tipos de pele.";
 
-        <p className="text-lg text-muted-foreground font-light leading-relaxed">
-          Esse óleo hidrata a pele, deixando ela macia e cheirosa. É leve, fácil de usar e perfeito pro dia a dia. Agite antes de usar para misturar as duas fases e libere todo o poder da lavanda.
-        </p>
-
-        <div className="space-y-4 pt-4 border-t border-border">
-          <h3 className="font-display text-2xl">Benefícios</h3>
-          <div className="grid sm:grid-cols-2 gap-3">
-            {["Hidrata a pele", "Deixa macia", "Aroma calmante", "Sensação refrescante"].map(b => (
-              <div key={b} className="flex items-center gap-3 p-4 rounded-xl bg-secondary/50">
-                <div className="w-2 h-2 rounded-full bg-primary" />
-                <span className="text-sm">{b}</span>
-              </div>
-            ))}
+  return (
+    <section className="container py-20">
+      <div className="grid lg:grid-cols-2 gap-16 items-start">
+        <div className="lg:sticky lg:top-28">
+          <div className="relative aspect-square rounded-3xl bg-gradient-hero overflow-hidden shadow-elegant">
+            <img src={heroImage} alt={nome} className="w-full h-full object-cover" />
           </div>
         </div>
 
-        <div className="space-y-3 pt-4 border-t border-border">
-          <h3 className="font-display text-2xl">Modo de uso</h3>
-          <p className="text-muted-foreground font-light">Agite antes de usar e aplique na pele espalhando bem.</p>
-        </div>
+        <div className="space-y-8 animate-fade-up">
+          <div>
+            <div className="text-xs tracking-widest uppercase text-primary mb-3">Skincare · {volume}</div>
+            <h2 className="font-display text-5xl md:text-6xl leading-[0.95] mb-4">{nome}</h2>
+            <div className="text-3xl font-display text-primary">R$ {precoFormatado}</div>
+          </div>
 
-        <div className="space-y-3 pt-4 border-t border-border">
-          <h3 className="font-display text-2xl">Indicação</h3>
-          <p className="text-muted-foreground font-light">Todos os tipos de pele.</p>
-        </div>
+          <p className="text-lg text-muted-foreground font-light leading-relaxed">{descricao}</p>
 
-        <Button onClick={onBuy} size="lg" className="w-full bg-primary hover:bg-primary-deep rounded-full h-14 text-base shadow-elegant">
-          Comprar — R$ 49,90
-          <ArrowRight className="w-4 h-4 ml-2" />
-        </Button>
+          <div className="space-y-4 pt-4 border-t border-border">
+            <h3 className="font-display text-2xl">Benefícios</h3>
+            <div className="grid sm:grid-cols-2 gap-3">
+              {beneficios.map((b) => (
+                <div key={b} className="flex items-center gap-3 p-4 rounded-xl bg-secondary/50">
+                  <div className="w-2 h-2 rounded-full bg-primary" />
+                  <span className="text-sm">{b}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="space-y-3 pt-4 border-t border-border">
+            <h3 className="font-display text-2xl">Modo de uso</h3>
+            <p className="text-muted-foreground font-light">{modoUso}</p>
+          </div>
+
+          <div className="space-y-3 pt-4 border-t border-border">
+            <h3 className="font-display text-2xl">Indicação</h3>
+            <p className="text-muted-foreground font-light">{indicacao}</p>
+          </div>
+
+          <Button onClick={onBuy} size="lg" className="w-full bg-primary hover:bg-primary-deep rounded-full h-14 text-base shadow-elegant">
+            Comprar — R$ {precoFormatado}
+            <ArrowRight className="w-4 h-4 ml-2" />
+          </Button>
+        </div>
       </div>
-    </div>
-  </section>
-);
+    </section>
+  );
+};
 
-const PRECO_BASE = 49.9;
-
-const Checkout = () => {
+const Checkout = ({ precoProduto }: { precoProduto: number }) => {
   const sessao = getSessao();
   const cliente: Cliente | undefined = sessao
     ? clienteRepo.findAll().find((c) => c.id === sessao.id)
@@ -197,7 +224,7 @@ const Checkout = () => {
   const [cupomInput, setCupomInput] = useState("");
   const [cupomAplicado, setCupomAplicado] = useState<{ codigo: string; valor: number } | null>(null);
 
-  const subtotal = PRECO_BASE;
+  const subtotal = precoProduto;
   const total = useMemo(
     () => +(Math.max(0, subtotal - (cupomAplicado?.valor ?? 0)) + (frete?.valor ?? 0)).toFixed(2),
     [subtotal, frete, cupomAplicado]
@@ -349,7 +376,7 @@ const Checkout = () => {
             <div className="flex-1">
               <div className="font-medium">Óleo Bifásico de Lavanda</div>
               <div className="text-sm text-muted-foreground">120ml · 1 unidade</div>
-              <div className="font-display text-lg text-primary mt-1">R$ {PRECO_BASE.toFixed(2)}</div>
+              <div className="font-display text-lg text-primary mt-1">R$ {precoProduto.toFixed(2)}</div>
             </div>
           </div>
           <div className="space-y-3 pb-2 border-b border-border/60">
